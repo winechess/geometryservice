@@ -30,7 +30,7 @@ public class CoordinateService {
             produces = {MediaType.APPLICATION_JSON_UTF8_VALUE, MediaType.APPLICATION_XML_VALUE}
     )
     public Coordinate create(@RequestBody Coordinate c){
-        c.setDate(new Date());
+        System.out.println(c);
         GeometryFactory geometryFactory = new GeometryFactory(new PrecisionModel(), 4326);
         c.setLocation(geometryFactory.createPoint(new com.vividsolutions.jts.geom.Coordinate(c.getLng(), c.getLat())));
         return coordinateRepository.save(c);

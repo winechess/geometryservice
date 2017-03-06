@@ -4,25 +4,25 @@
 -- ENCODING = 'UTF8'
 -- CONNECTION LIMIT = -1;
 
-CREATE USER geometryservice WITH
-  LOGIN
-  NOSUPERUSER
-  INHERIT
-  NOCREATEDB
-  NOCREATEROLE
-  NOREPLICATION;
+-- CREATE USER geometryservice WITH
+--   LOGIN
+--   NOSUPERUSER
+--   INHERIT
+--   NOCREATEDB
+--   NOCREATEROLE
+--   NOREPLICATION;
+--
+--
+-- CREATE SCHEMA IF NOT EXISTS geometryservice AUTHORIZATION geometryservice;
+-- ALTER SCHEMA geometryservice OWNER TO geometryservice;
+-- COMMENT ON SCHEMA geometryservice IS 'Schema for geometryservice to store users geodata';
 
 
-CREATE SCHEMA IF NOT EXISTS geometryservice AUTHORIZATION geometryservice;
-ALTER SCHEMA geometryservice OWNER TO geometryservice;
-COMMENT ON SCHEMA geometryservice IS 'Schema for geometryservice to store users geodata';
+-- SET SCHEMA 'geometryservice';
 
 
-SET SCHEMA 'geometryservice';
-
-
-CREATE EXTENSION IF NOT EXISTS postgis;
-CREATE EXTENSION IF NOT EXISTS btree_gist;
+CREATE EXTENSION IF NOT EXISTS postgis WITH SCHEMA geometryservice;
+CREATE EXTENSION IF NOT EXISTS btree_gist WITH SCHEMA geometryservice;
 
 
 CREATE SEQUENCE IF NOT EXISTS coordinates_id_seq;

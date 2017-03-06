@@ -44,6 +44,15 @@ public class Coordinate {
         return lat;
     }
 
+    public Date getDate() {
+        return date;
+    }
+
+    @JsonProperty("device_id")
+    public Long getDeviceId() {
+        return deviceId;
+    }
+
     public void setDate(Date date) {
         this.date = date;
     }
@@ -60,8 +69,19 @@ public class Coordinate {
         this.location = location;
     }
 
-    @JsonProperty("device_id")
     public void setDeviceId(Long deviceId) {
         this.deviceId = deviceId;
+    }
+
+    @Override
+    public String toString() {
+        return "Coordinate{" +
+                "id=" + id +
+                ", date=" + date +
+                ", lng=" + lng +
+                ", lat=" + lat +
+                ", location=" + location +
+                ", deviceId=" + deviceId +
+                '}';
     }
 }
