@@ -15,9 +15,7 @@ import java.util.Date;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-/**
- * Created by vinichenkosa on 06.03.17.
- */
+
 @RunWith(SpringRunner.class)
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
 @AutoConfigureTestDatabase(replace= AutoConfigureTestDatabase.Replace.NONE)

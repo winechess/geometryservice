@@ -11,26 +11,26 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.bind.annotation.RestController;
 
-import java.util.Date;
 import java.util.List;
 
-/**
- * Created by vinichenkosa on 05/03/2017.
- */
 @RestController
+@RequestMapping(path = "/coordinates")
 public class CoordinateService {
 
+    private final CoordinateRepository coordinateRepository;
+
     @Autowired
-    private CoordinateRepository coordinateRepository;
+    public CoordinateService(CoordinateRepository coordinateRepository) {
+        this.coordinateRepository = coordinateRepository;
+    }
 
     @RequestMapping(
             method = RequestMethod.POST,
-            path = "/coordinates",
             consumes = {MediaType.APPLICATION_JSON_UTF8_VALUE, MediaType.APPLICATION_XML_VALUE},
             produces = {MediaType.APPLICATION_JSON_UTF8_VALUE, MediaType.APPLICATION_XML_VALUE}
     )
-    public Coordinate create(@RequestBody Coordinate c){
-        System.out.println(c);
+
+    public Coordinate create(@RequestBody Coordinate c) {
         GeometryFactory geometryFactory = new GeometryFactory(new PrecisionModel(), 4326);
         c.setLocation(geometryFactory.createPoint(new com.vividsolutions.jts.geom.Coordinate(c.getLng(), c.getLat())));
         return coordinateRepository.save(c);
@@ -38,9 +38,9 @@ public class CoordinateService {
 
     @RequestMapping(
             method = RequestMethod.GET,
-            path = "/coordinates"
+            produces = {MediaType.APPLICATION_JSON_UTF8_VALUE, MediaType.APPLICATION_XML_VALUE}
     )
-    public List<Coordinate> get(){
+    public List<Coordinate> get() {
         return coordinateRepository.findAll();
     }
 

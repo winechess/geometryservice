@@ -6,9 +6,6 @@ import com.vividsolutions.jts.geom.Point;
 import javax.persistence.*;
 import java.util.Date;
 
-/**
- * Created by vinichenkosa on 05/03/2017.
- */
 @Entity
 @Table(name = "coordinates", schema = "geometryservice",
         indexes = {
