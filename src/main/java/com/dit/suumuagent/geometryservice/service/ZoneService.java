@@ -19,11 +19,7 @@ import org.springframework.web.bind.annotation.*;
 import javax.persistence.EntityManager;
 import javax.persistence.EntityNotFoundException;
 import javax.persistence.PersistenceContext;
-import javax.validation.Valid;
-import java.util.Collection;
-import java.util.Date;
-import java.util.List;
-import java.util.Set;
+import java.util.*;
 
 
 @RestController
@@ -35,6 +31,7 @@ public class ZoneService {
     @PersistenceContext
     private EntityManager em;
 
+    @Transactional
     @RequestMapping(
             method = RequestMethod.POST,
             consumes = {MediaType.APPLICATION_JSON_UTF8_VALUE, MediaType.APPLICATION_XML_VALUE},
@@ -45,6 +42,8 @@ public class ZoneService {
             @RequestHeader(value = "Organization-Id", required = false) Long organizationId,
             @Validated @RequestBody Zone z
     ) {
+
+        System.out.println(z);
         if (!z.getOrganizationId().equals(organizationId) && !isAdmin(organizationId)) {
             throw new AccessDeniedException("You can not create zone in this organization.");
         }
@@ -102,6 +101,7 @@ public class ZoneService {
         return zone;
     }
 
+    @Transactional
     @RequestMapping(
             path = "/{id}",
             method = RequestMethod.PATCH,
@@ -113,16 +113,13 @@ public class ZoneService {
             @PathVariable(name = "id") Long id,
             @Validated @RequestBody Zone z
     ) {
-        System.out.println("z.coordinates: "+z.getCoordinates().toString());
         Zone zoneRef = zoneRepository.getOne(id);
-        System.out.println("zoneRef.coordinates: "+zoneRef.getCoordinates().toString());
         Boolean updatedFlag = false;
 
         if (!zoneRef.getOrganizationId().equals(organizationId) && !isAdmin(organizationId))
             throw new AccessDeniedException("You can not edit zones in this organization.");
 
         if (!z.getCoordinates().equals(zoneRef.getCoordinates())) {
-            System.out.println("Coordinates not equals");
             zoneRef.setCoordinates(z.getCoordinates());
             updatedFlag = true;
         }
@@ -133,11 +130,11 @@ public class ZoneService {
         }
 
         if (updatedFlag) zoneRef =  zoneRepository.saveAndFlush(zoneRef);
-        System.out.println(zoneRef);
 
         return zoneRef;
     }
 
+    @Transactional
     @RequestMapping(
             path = "/{id}",
             method = RequestMethod.DELETE,
@@ -148,12 +145,9 @@ public class ZoneService {
             @RequestHeader(value = "Organization-Id", required = false) Long organizationId,
             @PathVariable(name = "id") Long id
     ) {
-        System.out.println("deleting zone with id " + id);
         if (isAdmin(organizationId)) {
-            System.out.println("admin deleting zone with id " + id);
             zoneRepository.delete(id);
         } else {
-            System.out.println("user deleting zone with id " + id);
             zoneRepository.deleteByIdAndOrganizationId(id, organizationId);
         }
     }
@@ -169,8 +163,8 @@ public class ZoneService {
             @PathVariable(name = "id") Long organizationId
     ) {
 
-        if (!isAdmin(organizationId) && !organizationIdHeader.equals(organizationId))
-            throw new AccessDeniedException("You can not fetch zones of another organization. (if you are root admin contact technical support)");
+        if (!isAdmin(organizationIdHeader) && !organizationIdHeader.equals(organizationId))
+            throw new AccessDeniedException("You can not fetch zones of another organization.");
 
         return zoneRepository.findAll(QZone.zone.organizationId.eq(organizationId));
     }
@@ -204,36 +198,17 @@ public class ZoneService {
             @RequestHeader(value = "Organization-Id", required = false) Long organizationId,
             @PathVariable(name = "id") Long configId, @RequestBody Set<Zone> zones
     ) {
+        //TODO: сделать проверку является ли пользователем администратором организации, к конфигурации которой прикрепляются зоны необходимо в API GATEWAY
 
         if (!isAdmin(organizationId)) {
-            zones.forEach(zone -> {
-                if (!zone.getOrganizationId().equals(organizationId))
-                    throw new AccessDeniedException("You can not use zones of another organization.");
-            });
+            //Проверяем не использовал ли пользователь (администратор организации) зоны из другой организации
+            zones.forEach(zone -> zoneOrganizationEqualsUserOrganization(zone, organizationId));
         }
 
         zones.forEach(zone -> em.persist(new ConfigurationZone(configId, zone.getId())));
         em.flush();
         em.clear();
     }
-
-    @Transactional
-    @RequestMapping(
-            path = "/update/for/configuration/{id}",
-            method = RequestMethod.PUT,
-            produces = {MediaType.APPLICATION_JSON_UTF8_VALUE, MediaType.APPLICATION_XML_VALUE}
-    )
-    public void updateForConfiguration(
-            @RequestHeader(value = "User-Id") Long userId,
-            @RequestHeader(value = "Organization-Id", required = false) Long organizationId,
-            @PathVariable(name = "id") Long configId, @RequestBody Set<Zone> zones
-    ) {
-        //Мы не удаляем старые зоны, так как при обновлении конфигурации, мы на самом деле создаем новую конфигурацию,
-        //а старую скрываем, поэтому переданный id новый и не может содержаться в связке конфигураций и зон
-        //disableForConfiguration(configId);
-        enableForConfiguration(organizationId, userId, configId, zones);
-    }
-
 
     @Transactional
     @RequestMapping(
@@ -246,7 +221,7 @@ public class ZoneService {
             @RequestHeader(value = "Organization-Id", required = false) Long organizationId,
             @PathVariable(name = "id") Long configId
     ) {
-
+        //TODO: сделать проверку на то, является ли пользователем администратором организации, конфигурация которой удаляется необходимо в API GATEWAY
         //noinspection JpaQueryApiInspection
         em.createNamedQuery("ConfigurationZone.deleteByConfigId").setParameter("configId", configId).executeUpdate();
     }
@@ -254,5 +229,9 @@ public class ZoneService {
     private Boolean isAdmin(Long organizationId) {
         //TODO: !IMPORTANT Replace organizationId != null with userIsAdmin()
         return organizationId == null;
+    }
+
+    private void zoneOrganizationEqualsUserOrganization(Zone zone, Long userOrganizationId){
+        if (!zone.getOrganizationId().equals(userOrganizationId)) throw new AccessDeniedException("You can not use zones of another organization.");
     }
 }

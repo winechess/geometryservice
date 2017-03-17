@@ -7,11 +7,9 @@ import com.vividsolutions.jts.geom.GeometryFactory;
 import com.vividsolutions.jts.geom.Polygon;
 import com.vividsolutions.jts.geom.PrecisionModel;
 import org.hibernate.validator.constraints.NotBlank;
-import org.hibernate.validator.constraints.NotEmpty;
 
 import javax.persistence.*;
 import javax.validation.constraints.NotNull;
-import javax.validation.constraints.Size;
 import java.util.Arrays;
 import java.util.Date;
 import java.util.List;
@@ -52,13 +50,11 @@ public class Zone {
     @Column(name = "edited_by", nullable = false)
     private Long editedBy;
     @Transient
-    @NotNull(message = "Zone coordinates can not be empty!")
-    @Size(min = 4, message = "Zone required minimum 3 coordinates.")
     private List<ExtendedCoordinate> coordinates;
 
     @JsonProperty("coordinates")
     public List<ExtendedCoordinate> getCoordinates() {
-        if (coordinates != null) return coordinates;
+        if (coordinates != null && !coordinates.isEmpty()) return coordinates;
         if (this.polygon == null) return null;
         this.coordinates = Arrays.stream(this.polygon.getCoordinates()).map(ExtendedCoordinate::new).collect(Collectors.toList());
         return  this.coordinates;
