@@ -8,17 +8,18 @@ import com.dit.suumuagent.geometryservice.model.Zone;
 import com.dit.suumuagent.geometryservice.repository.ZoneRepository;
 import com.querydsl.core.BooleanBuilder;
 import com.querydsl.core.types.dsl.BooleanExpression;
-import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.http.MediaType;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 
 import javax.persistence.EntityManager;
 import javax.persistence.EntityNotFoundException;
 import javax.persistence.PersistenceContext;
+import javax.validation.Valid;
 import java.util.Collection;
 import java.util.Date;
 import java.util.List;
@@ -42,21 +43,11 @@ public class ZoneService {
     public Zone create(
             @RequestHeader(value = "User-Id") Long userId,
             @RequestHeader(value = "Organization-Id", required = false) Long organizationId,
-            @RequestBody Zone z
+            @Validated @RequestBody Zone z
     ) {
-
-        if (z.getOrganizationId() == null)
-            throw new IllegalArgumentException("Invalid zone object: \"organization_id\" field required.");
-
         if (!z.getOrganizationId().equals(organizationId) && !isAdmin(organizationId)) {
-            throw new AccessDeniedException("You can not create zone in this organization. (if you are root admin contact technical support)");
+            throw new AccessDeniedException("You can not create zone in this organization.");
         }
-
-        if (z.getPolygon() == null)
-            throw new IllegalArgumentException("Invalid zone object: \"coordinates\" field required.");
-
-        if (StringUtils.isBlank(z.getTitle()))
-            throw new IllegalArgumentException("Invalid zone object: \"title\" field required.");
 
         z.setCreated(new Date());
         z.setCreatedBy(userId);
@@ -119,33 +110,30 @@ public class ZoneService {
     public Zone edit(
             @RequestHeader(value = "User-Id") Long userId,
             @RequestHeader(value = "Organization-Id", required = false) Long organizationId,
-            @PathVariable(name = "id") Long id, @RequestBody Zone z
-    ) throws NoSuchFieldException, IllegalAccessException {
-
+            @PathVariable(name = "id") Long id,
+            @Validated @RequestBody Zone z
+    ) {
+        System.out.println("z.coordinates: "+z.getCoordinates().toString());
         Zone zoneRef = zoneRepository.getOne(id);
+        System.out.println("zoneRef.coordinates: "+zoneRef.getCoordinates().toString());
         Boolean updatedFlag = false;
 
         if (!zoneRef.getOrganizationId().equals(organizationId) && !isAdmin(organizationId))
-            throw new AccessDeniedException("You can not edit zones in this organization. (if you are root admin contact technical support)");
+            throw new AccessDeniedException("You can not edit zones in this organization.");
 
-        if (z.getPolygon() != null) {
-            if (!z.getPolygonCoordinates().equals(zoneRef.getPolygonCoordinates())) {
-                zoneRef.setPolygon(z.getPolygon());
-                updatedFlag = true;
-            }
+        if (!z.getCoordinates().equals(zoneRef.getCoordinates())) {
+            System.out.println("Coordinates not equals");
+            zoneRef.setCoordinates(z.getCoordinates());
+            updatedFlag = true;
         }
 
-//        if (z.getOrganizationId() != null && !z.getOrganizationId().equals(zoneRef.getOrganizationId())) {
-//            zoneRef.setOrganizationId(z.getOrganizationId());
-//            updatedFlag = true;
-//        }
-
-        if (z.getTitle() != null && !z.getTitle().equals(zoneRef.getTitle())) {
+        if (!z.getTitle().equals(zoneRef.getTitle())) {
             zoneRef.setTitle(z.getTitle());
             updatedFlag = true;
         }
 
-        if (updatedFlag) return zoneRepository.saveAndFlush(zoneRef);
+        if (updatedFlag) zoneRef =  zoneRepository.saveAndFlush(zoneRef);
+        System.out.println(zoneRef);
 
         return zoneRef;
     }
@@ -160,12 +148,12 @@ public class ZoneService {
             @RequestHeader(value = "Organization-Id", required = false) Long organizationId,
             @PathVariable(name = "id") Long id
     ) {
-        System.out.println("deleting zone with id "+id);
+        System.out.println("deleting zone with id " + id);
         if (isAdmin(organizationId)) {
-            System.out.println("admin deleting zone with id "+id);
+            System.out.println("admin deleting zone with id " + id);
             zoneRepository.delete(id);
         } else {
-            System.out.println("user deleting zone with id "+id);
+            System.out.println("user deleting zone with id " + id);
             zoneRepository.deleteByIdAndOrganizationId(id, organizationId);
         }
     }

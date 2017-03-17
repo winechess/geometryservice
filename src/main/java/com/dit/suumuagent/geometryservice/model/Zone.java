@@ -6,8 +6,12 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import com.vividsolutions.jts.geom.GeometryFactory;
 import com.vividsolutions.jts.geom.Polygon;
 import com.vividsolutions.jts.geom.PrecisionModel;
+import org.hibernate.validator.constraints.NotBlank;
+import org.hibernate.validator.constraints.NotEmpty;
 
 import javax.persistence.*;
+import javax.validation.constraints.NotNull;
+import javax.validation.constraints.Size;
 import java.util.Arrays;
 import java.util.Date;
 import java.util.List;
@@ -27,11 +31,14 @@ public class Zone {
     @SequenceGenerator(name = "zoneIdGenerator", allocationSize = 1, initialValue = 1, sequenceName = "zones_id_seq", schema = "geometryservice")
     @Column(name = "id", nullable = false, updatable = false, insertable = false)
     private Long id;
+    @NotBlank(message = "Zone title can not be empty.")
     @Column(name = "title", nullable = false)
     private String title;
     @Column(name = "polygon", nullable = false)
+    @NotNull(message = "Polygon can not be empty!")
     private Polygon polygon;
     @Column(name = "organization_id", nullable = false)
+    @NotNull
     private Long organizationId;
 
     @Column(name = "created", nullable = false)
@@ -44,17 +51,22 @@ public class Zone {
     private Date edited;
     @Column(name = "edited_by", nullable = false)
     private Long editedBy;
+    @Transient
+    @NotNull(message = "Zone coordinates can not be empty!")
+    @Size(min = 4, message = "Zone required minimum 3 coordinates.")
+    private List<ExtendedCoordinate> coordinates;
 
     @JsonProperty("coordinates")
-    public List<ExtendedCoordinate> getPolygonCoordinates() {
+    public List<ExtendedCoordinate> getCoordinates() {
+        if (coordinates != null) return coordinates;
         if (this.polygon == null) return null;
-        return Arrays.stream(this.polygon.getCoordinates()).map(ExtendedCoordinate::new).collect(Collectors.toList());
+        this.coordinates = Arrays.stream(this.polygon.getCoordinates()).map(ExtendedCoordinate::new).collect(Collectors.toList());
+        return  this.coordinates;
     }
 
     @JsonProperty("coordinates")
-    public void createPolygon(List<ExtendedCoordinate> coordinates) {
-        if (coordinates == null || coordinates.size() < 4)
-            throw new IllegalArgumentException("You need to specify at least 3 coordinates!");
+    public void setCoordinates(List<ExtendedCoordinate> coordinates) {
+        this.coordinates = coordinates;
         GeometryFactory geometryFactory = new GeometryFactory(new PrecisionModel(), 4326);
         this.polygon = geometryFactory.createPolygon(coordinates.toArray(new ExtendedCoordinate[coordinates.size()]));
     }

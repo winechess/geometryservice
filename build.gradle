@@ -125,6 +125,7 @@ dependencies {
     compile "org.hibernate:hibernate-spatial:${project.hibernateVersion}"
     compile "org.hibernate:hibernate-jpamodelgen:${project.hibernateVersion}"
     compile "org.hibernate:hibernate-entitymanager:${project.hibernateVersion}"
+    compile "org.hibernate:hibernate-validator"
     compile "com.querydsl:querydsl-jpa:${project.queryDslVersion}"
     compile "org.postgresql:postgresql:${project.postgresqlJdbcDriverVersion}"
     compile 'org.apache.commons:commons-lang3:3.3'

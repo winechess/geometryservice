@@ -15,10 +15,7 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.http.*;
 import org.springframework.test.context.junit4.SpringRunner;
 
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.LinkedHashMap;
-import java.util.List;
+import java.util.*;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -33,7 +30,6 @@ public class ZoneServiceTest {
     private HttpHeaders headers;
 
 
-
     @Before
     public void setUp() throws Exception {
 
@@ -45,8 +41,8 @@ public class ZoneServiceTest {
         points.add(new ExtendedCoordinate(0.0, 0.0));
 
         zone = new Zone();
-        zone.createPolygon(points);
-        zone.setOrganizationId(321L);
+        zone.setCoordinates(points);
+        zone.setOrganizationId(1L);
         zone.setTitle("Test");
 
         headers = new HttpHeaders();
@@ -81,49 +77,27 @@ public class ZoneServiceTest {
         zone.setId(response.getBody().getId());
         System.out.println("Assert that entity from server is equals to sended object");
         assertThat(response.getBody()).isEqualToComparingFieldByFieldRecursively(zone);
-
-        System.out.println("Testing create method ended.");
     }
 
     @Test
-    public void createEntityWithEmptyPolygon() throws Exception {
+    public void tryToCreateZoneAsUserInAnotherOrganization() throws Exception {
 
-        System.out.println("Testing createEntityWithEmptyPolygon ...");
+        System.out.println("tryToCreateZoneAsUserInAnotherOrganization");
 
-        Zone z = new Zone();
-        z.setOrganizationId(zone.getOrganizationId());
+        System.out.println("Saving entity to server...");
+        headers.set("Organization-Id", "33542");
+        HttpEntity<Zone> req = new HttpEntity<>(zone, headers);
+        ResponseEntity<String> response = restTemplate.postForEntity("/zones", req, String.class);
 
-        System.out.println("Saving zone with empty polygon ...");
-        HttpEntity<Zone> req = new HttpEntity<>(z, headers);
-        ResponseEntity<Zone> response = restTemplate.postForEntity("/zones",  req, Zone.class);
-
-        System.out.println("Assert that server respond with status 400");
-        assertThat(response.getStatusCodeValue()).isEqualTo(400);
-
-        System.out.println("Testing createEntityWithEmptyPolygon ended.");
-    }
-
-    @Test
-    public void createEntityWithEmptyConfigId() throws Exception {
-
-        System.out.println("Testing createEntityWithEmptyConfigId ...");
-
-        Zone z = new Zone();
-        z.setPolygon(zone.getPolygon());
-
-        System.out.println("Saving zone with empty configId...");
-        HttpEntity<Zone> req = new HttpEntity<>(z, headers);
-        ResponseEntity<Zone> response = restTemplate.postForEntity("/zones", req, Zone.class);
-
-        System.out.println("Assert that server respond with status 400");
-        assertThat(response.getStatusCodeValue()).isEqualTo(400);
-
-        System.out.println("Testing createEntityWithEmptyConfigId ended.");
+        System.out.println("Assert that server respond with status 403");
+        assertThat(response.getStatusCodeValue()).isEqualTo(403);
+        System.out.println("assert that message equals \"You can not create zone in this organization\"");
+        assertThat(response.getBody()).contains("You can not create zone in this organization");
     }
 
     @Test
     public void findAll() throws Exception {
-        
+
         System.out.println("Testing findAll method ...");
 
         System.out.println("Saving entity to server if not exists ...");
@@ -138,13 +112,13 @@ public class ZoneServiceTest {
         assertThat(response.getStatusCodeValue()).isEqualTo(200);
         System.out.println("Assert that amount of found entities is not 0");
         assertThat(body.get("totalElements")).isNotEqualTo(0);
-        
+
         System.out.println("Testing findAll method ended.");
     }
 
     @Test
     public void find() throws Exception {
-        
+
         System.out.println("Testing find method started.");
 
         System.out.println("Saving entity to server if not exists ...");
@@ -171,10 +145,10 @@ public class ZoneServiceTest {
         createZoneIfNotExists();
 
         //Change zone object by adding new coordinate to polygon
-        List<ExtendedCoordinate> coords = zone.getPolygonCoordinates();
+        List<ExtendedCoordinate> coords = zone.getCoordinates();
         coords.add(1, new ExtendedCoordinate(2.0, 2.0));
         //Rectreate polygon with new coordinates
-        zone.createPolygon(coords);
+        zone.setCoordinates(coords);
         zone.setTitle("New title");
         //zone.setOrganizationId(1L);
 
@@ -232,19 +206,19 @@ public class ZoneServiceTest {
 
     }
 
-    private ResponseEntity<Zone> getZoneById(Long id){
+    private ResponseEntity<Zone> getZoneById(Long id) {
         HttpEntity<Zone> req = new HttpEntity<>(headers);
         return restTemplate.exchange("/zones/{id}", HttpMethod.GET, req, Zone.class, id);
     }
 
-    private void createZoneIfNotExists(){
-        if(zone.getId() != null) return;
+    private void createZoneIfNotExists() {
+        if (zone.getId() != null) return;
         HttpEntity<Zone> req = new HttpEntity<>(zone, headers);
         ResponseEntity<Zone> response = restTemplate.postForEntity("/zones", req, Zone.class);
         zone.setId(response.getBody().getId());
     }
 
-    class SpringPage extends PageImpl<Zone>{
+    class SpringPage extends PageImpl<Zone> {
         public SpringPage() {
             super(Collections.emptyList());
         }

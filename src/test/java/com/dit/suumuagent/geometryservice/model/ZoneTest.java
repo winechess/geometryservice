@@ -45,11 +45,11 @@ public class ZoneTest {
     @Test
     public void createPolygon() throws Exception {
         Zone zone = new Zone();
-        zone.createPolygon(points);
+        zone.setCoordinates(points);
 
         //noinspection unchecked
         assertThat(zone.getPolygon()).isNotNull();
-        assertThat(points).isEqualTo(zone.getPolygonCoordinates());
+        assertThat(points).isEqualTo(zone.getCoordinates());
     }
 
 }
