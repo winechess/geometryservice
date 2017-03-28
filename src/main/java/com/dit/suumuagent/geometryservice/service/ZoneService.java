@@ -8,6 +8,8 @@ import com.dit.suumuagent.geometryservice.model.Zone;
 import com.dit.suumuagent.geometryservice.repository.ZoneRepository;
 import com.querydsl.core.BooleanBuilder;
 import com.querydsl.core.types.dsl.BooleanExpression;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
@@ -43,7 +45,12 @@ public class ZoneService {
             @Validated @RequestBody Zone z
     ) {
 
-        System.out.println(z);
+        logger.debug("ZoneService.create() method was called.");
+        logger.debug("User-Id: {}", userId);
+        logger.debug("Organization-Id: {}", organizationId);
+        logger.debug("Zone: {}", z);
+
+
         if (!z.getOrganizationId().equals(organizationId) && !isAdmin(organizationId)) {
             throw new AccessDeniedException("You can not create zone in this organization.");
         }
@@ -234,4 +241,6 @@ public class ZoneService {
     private void zoneOrganizationEqualsUserOrganization(Zone zone, Long userOrganizationId){
         if (!zone.getOrganizationId().equals(userOrganizationId)) throw new AccessDeniedException("You can not use zones of another organization.");
     }
+
+    private final Logger logger = LoggerFactory.getLogger(this.getClass());
 }

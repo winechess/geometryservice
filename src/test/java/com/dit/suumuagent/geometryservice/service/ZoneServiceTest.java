@@ -110,7 +110,7 @@ public class ZoneServiceTest {
 
         System.out.println("Getting all entities from server ...");
         HttpEntity<Zone> req = new HttpEntity<>(headers);
-        ResponseEntity<LinkedHashMap> response = restTemplate.exchange("/zones", HttpMethod.GET, req, LinkedHashMap.class);
+        ResponseEntity<LinkedHashMap> response = restTemplate.exchange("/zones?sort={sort}", HttpMethod.GET, req, LinkedHashMap.class, "id:ASC");
         LinkedHashMap body = response.getBody();
 
         System.out.println("Assert that server respond with status 200");

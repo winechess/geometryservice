@@ -5,7 +5,10 @@ import org.springframework.data.domain.Sort;
 import java.util.ArrayList;
 import java.util.List;
 
-public class SortUtils {
+public final class SortUtils {
+
+    private SortUtils() {
+    }
 
     public static Sort getSort(List<String> sortBy) {
 

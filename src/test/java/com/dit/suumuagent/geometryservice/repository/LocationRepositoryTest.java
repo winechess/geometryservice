@@ -1,6 +1,6 @@
 package com.dit.suumuagent.geometryservice.repository;
 
-import com.dit.suumuagent.geometryservice.model.Coordinate;
+import com.dit.suumuagent.geometryservice.model.Location;
 import org.junit.BeforeClass;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -17,28 +17,24 @@ import static org.assertj.core.api.Assertions.assertThat;
 @RunWith(SpringRunner.class)
 @DataJpaTest
 @AutoConfigureTestDatabase(replace= AutoConfigureTestDatabase.Replace.NONE)
-public class CoordinateRepositoryTest {
+public class LocationRepositoryTest {
 
     @Autowired
-    private CoordinateRepository coordinateRepository;
+    private LocationRepository locationRepository;
 
-    private final static Coordinate c = new Coordinate();
+    private final static Location c = new Location();
 
     @BeforeClass
     public static void setUp() throws Exception {
         c.setDate(new Date());
-        c.setLat(89.01234567);
-        c.setLng(123.4567890);
         c.setDeviceId(123L);
     }
 
     @Test
     public void create() throws Exception {
-        Coordinate coordinate = coordinateRepository.save(c);
-        assertThat(coordinate.getDate()).isEqualTo(c.getDate());
-        assertThat(coordinate.getDeviceId()).isEqualTo(c.getDeviceId());
-        assertThat(coordinate.getLat()).isEqualTo(c.getLat());
-        assertThat(coordinate.getLng()).isEqualTo(c.getLng());
+        Location location = locationRepository.save(c);
+        assertThat(location.getDate()).isEqualTo(c.getDate());
+        assertThat(location.getDeviceId()).isEqualTo(c.getDeviceId());
     }
 
 }
