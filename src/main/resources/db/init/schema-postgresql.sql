@@ -1,11 +1,5 @@
-CREATE DATABASE suumuagent
-WITH
-OWNER = postgres
-ENCODING = 'UTF8'
-CONNECTION LIMIT = -1;
-
-CREATE USER geometryservice WITH
-  LOGIN
+CREATE DATABASE suumuagent WITH OWNER = postgres ENCODING = 'UTF8' CONNECTION LIMIT = -1;
+CREATE USER geometryservice WITH LOGIN
   NOSUPERUSER
   INHERIT
   NOCREATEDB
@@ -13,76 +7,80 @@ CREATE USER geometryservice WITH
   NOREPLICATION;
 
 
-CREATE SCHEMA IF NOT EXISTS geometryservice
-  AUTHORIZATION geometryservice;
+CREATE SCHEMA geometryservice;
 ALTER SCHEMA geometryservice
 OWNER TO geometryservice;
 COMMENT ON SCHEMA geometryservice IS 'Schema for geometryservice to store users geodata';
 
-
-SET SCHEMA 'geometryservice';
-
+SET search_path = geometryservice, pg_catalog;
+SET default_tablespace = '';
+SET default_with_oids = false;
 
 CREATE EXTENSION IF NOT EXISTS postgis WITH SCHEMA geometryservice;
 CREATE EXTENSION IF NOT EXISTS btree_gist WITH SCHEMA geometryservice;
 
 
-CREATE SEQUENCE IF NOT EXISTS coordinates_id_seq;
-ALTER SEQUENCE coordinates_id_seq
-OWNER TO geometryservice;
-CREATE TABLE IF NOT EXISTS coordinates
-(
-  id        BIGINT                      NOT NULL DEFAULT nextval('coordinates_id_seq' :: REGCLASS),
-  date      TIMESTAMP WITHOUT TIME ZONE NOT NULL,
-  lat       DOUBLE PRECISION            NOT NULL,
-  lng       DOUBLE PRECISION            NOT NULL,
-  device_id BIGINT                      NOT NULL,
-  location  GEOMETRY(POINT, 4326)       NOT NULL,
-
-  CONSTRAINT coordinates_pkey PRIMARY KEY (id),
-  CONSTRAINT coordinates_lat_check CHECK (lat > '-90' :: INTEGER :: DOUBLE PRECISION AND
-                                          lat <= 90 :: DOUBLE PRECISION ),
-  CONSTRAINT coordinates_lng_check CHECK (lng > '-180' :: INTEGER :: DOUBLE PRECISION AND
-                                          lng <= 180 :: DOUBLE PRECISION )
-
-);
-ALTER TABLE coordinates
-  OWNER TO geometryservice;
-CREATE INDEX coordinates_location_idx
-  ON coordinates USING GIST (location) TABLESPACE pg_default;
-CREATE INDEX coordinates_device_id_idx
-  ON coordinates (device_id);
-
-CREATE SEQUENCE IF NOT EXISTS geometryservice.zones_id_seq;
-ALTER SEQUENCE zones_id_seq
-OWNER TO geometryservice;
-CREATE TABLE IF NOT EXISTS geometryservice.zones
-(
-  id              BIGINT                      NOT NULL DEFAULT nextval('zones_id_seq' :: REGCLASS),
-  title           VARCHAR(255)                NOT NULL,
-  polygon         GEOMETRY(POLYGON, 4326)     NOT NULL,
-  organization_id BIGINT                      NOT NULL,
-  created         TIMESTAMP WITHOUT TIME ZONE NOT NULL,
-  created_by      BIGINT                      NOT NULL,
-  edited          TIMESTAMP WITHOUT TIME ZONE NOT NULL,
-  edited_by       BIGINT                      NOT NULL,
-
-  CONSTRAINT zones_pkey PRIMARY KEY (id)
-);
-ALTER TABLE geometryservice.zones
-  OWNER TO geometryservice;
-CREATE INDEX zones_polygon_idx
-  ON zones USING GIST (polygon) TABLESPACE pg_default;
-CREATE INDEX zones_config_id_idx
-  ON zones (organization_id);
-
-
-CREATE TABLE IF NOT EXISTS geometryservice.configurations_zones
-(
+CREATE TABLE configurations_zones (
   configuration_id BIGINT NOT NULL,
-  zone_id          BIGINT NOT NULL,
-  CONSTRAINT configurations_zones_pkey PRIMARY KEY (configuration_id, zone_id)
+  zone_id          BIGINT NOT NULL
 );
-
-ALTER TABLE geometryservice.configurations_zones
+ALTER TABLE configurations_zones
   OWNER TO geometryservice;
+
+
+CREATE SEQUENCE locations_id_seq
+START WITH 1
+INCREMENT BY 1
+NO MINVALUE
+NO MAXVALUE
+CACHE 1;
+ALTER TABLE locations_id_seq
+  OWNER TO geometryservice;
+CREATE TABLE locations (
+  id        BIGINT DEFAULT nextval('locations_id_seq' :: REGCLASS) NOT NULL,
+  date      TIMESTAMP WITHOUT TIME ZONE                            NOT NULL,
+  device_id BIGINT                                                 NOT NULL,
+  point     GEOMETRY(POINT, 4326)                                  NOT NULL
+);
+ALTER TABLE locations
+  OWNER TO geometryservice;
+
+
+CREATE SEQUENCE zones_id_seq
+START WITH 1
+INCREMENT BY 1
+NO MINVALUE
+NO MAXVALUE
+CACHE 1;
+ALTER TABLE zones_id_seq
+  OWNER TO geometryservice;
+CREATE TABLE zones (
+  id              BIGINT DEFAULT nextval('zones_id_seq' :: REGCLASS) NOT NULL,
+  polygon         GEOMETRY(POLYGON, 4326)                            NOT NULL,
+  organization_id BIGINT                                             NOT NULL,
+  title           CHARACTER VARYING(255)                             NOT NULL,
+  created         TIMESTAMP WITHOUT TIME ZONE                        NOT NULL,
+  created_by      BIGINT                                             NOT NULL,
+  edited          TIMESTAMP WITHOUT TIME ZONE                        NOT NULL,
+  edited_by       BIGINT                                             NOT NULL
+);
+ALTER TABLE zones
+  OWNER TO geometryservice;
+
+
+ALTER TABLE ONLY configurations_zones
+  ADD CONSTRAINT configurations_zones_pkey PRIMARY KEY (configuration_id, zone_id);
+ALTER TABLE ONLY locations
+  ADD CONSTRAINT locations_pkey PRIMARY KEY (id);
+ALTER TABLE ONLY zones
+  ADD CONSTRAINT zones_pkey PRIMARY KEY (id);
+
+
+CREATE INDEX locations_device_id_idx
+  ON locations USING BTREE (device_id);
+CREATE INDEX locations_point_idx
+  ON locations USING GIST (point);
+CREATE INDEX zones_organization_id_idx
+  ON zones USING BTREE (organization_id);
+CREATE INDEX zones_polygon_idx
+  ON zones USING GIST (polygon);

@@ -18,6 +18,7 @@ import org.springframework.test.context.junit4.SpringRunner;
 
 import java.util.Date;
 import java.util.Random;
+import java.util.Set;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -114,7 +115,10 @@ public class LocationServiceTest {
         ResponseEntity<Void> response = restTemplate.exchange("/locations/delete/by/device/{deviceId}", HttpMethod.DELETE, req, Void.class, location.getDeviceId());
 
         assertThat(response.getStatusCodeValue()).isEqualTo(200);
-        assertThat(locationRepository.findAllByDeviceId(location.getDeviceId()).size()).isEqualTo(0);
+        Set<Location> res = locationRepository.findAllByDeviceIdAndDateBetween(
+                location.getDeviceId(), location.getDate(), new Date()
+        );
+        assertThat(res.size()).isEqualTo(0);
     }
 
 }
